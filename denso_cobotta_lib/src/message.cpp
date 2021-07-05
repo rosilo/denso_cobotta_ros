@@ -149,6 +149,7 @@ bool Message::isWatchdogTimerError(const uint32_t code)
   if ((code & 0x854A5200) == 0x854A5200)
     return true;
   // if ((code & 0x854A520F) == code)
+  return false;
 }
 
 int Message::getErrorLevel() const
