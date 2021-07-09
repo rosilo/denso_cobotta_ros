@@ -119,6 +119,7 @@ PublishInfo Cobotta::update() throw(CobottaException, std::runtime_error)
     if (this->getMotor()->shouldStop())
     {
       Motor::sendStop(this->getFd());
+      throw std::runtime_error("Error caused motor to stop.");
     }
   }
 
