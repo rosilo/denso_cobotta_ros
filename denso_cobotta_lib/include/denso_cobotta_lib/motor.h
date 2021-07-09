@@ -66,10 +66,10 @@ public:
 
   static int readHw(int fd) throw(CobottaException, std::runtime_error);
 
-private:
   static void writeHwOn(int fd) throw(CobottaException, std::runtime_error);
   static void writeHwOff(int fd) throw(CobottaException, std::runtime_error);
 
+private:
   std::shared_ptr<cobotta::Cobotta> getParent() const;
 
   std::shared_ptr<cobotta::Cobotta> parent_ = nullptr;
