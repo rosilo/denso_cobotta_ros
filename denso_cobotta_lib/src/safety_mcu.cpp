@@ -252,6 +252,9 @@ void SafetyMcu::moveToNormal() throw(CobottaException, std::runtime_error)
       throw CobottaException(0x83201F83); /* Operation failed */
 
     ros::Duration(cobotta_common::getPeriod()).sleep();
+
+    //This function expects that another thread updates the state???
+    parent_->update();
   }
   ROS_INFO("%s: ...It has been in a normal state.", TAG);
 }

@@ -179,6 +179,9 @@ void Motor::start(void) throw(CobottaException, std::runtime_error)
       throw CobottaException(0x83201F83); /* Operation failed */
 
     ros::Duration(cobotta_common::getPeriod()).sleep();
+
+    //This was also waiting for an external thread to update the robot state
+    parent_->update();
   }
   ROS_INFO("%s: ... Motor has started.", TAG);
 }
