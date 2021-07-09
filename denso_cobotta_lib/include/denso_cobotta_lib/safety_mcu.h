@@ -84,10 +84,11 @@ public:
   enum SafetyMcuState getState() const;
   int getStateQueue() const;
 
-private:
+  static struct StateCode readHwQueue(const int fd) throw(CobottaException, std::runtime_error);
   static void writeHwState(const int fd,
                            const enum SafetyMcuCommand command) throw(CobottaException, std::runtime_error);
-  static struct StateCode readHwQueue(const int fd) throw(CobottaException, std::runtime_error);
+
+private:
 
   std::shared_ptr<Cobotta> getParent() const;
 

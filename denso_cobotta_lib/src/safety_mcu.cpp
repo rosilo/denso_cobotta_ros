@@ -33,7 +33,7 @@ namespace cobotta
  */
 SafetyMcu::SafetyMcu(const std::shared_ptr<Cobotta>& parent)
 {
-  this->parent_ = parent;
+    this->parent_ = parent;
 }
 
 /**
@@ -51,13 +51,13 @@ SafetyMcu::SafetyMcu(const std::shared_ptr<Cobotta>& parent,
                      const bool fatal_error, const bool error,
                      const bool emergency_button, const bool protective_button)
 {
-  this->parent_ = parent;
-  this->state_ = state;
-  this->state_queue_ = state_queue;
-  this->fatal_error_ = fatal_error;
-  this->error_ = error;
-  this->emergency_button_ =  emergency_button;
-  this->protective_button_ = protective_button;
+    this->parent_ = parent;
+    this->state_ = state;
+    this->state_queue_ = state_queue;
+    this->fatal_error_ = fatal_error;
+    this->error_ = error;
+    this->emergency_button_ =  emergency_button;
+    this->protective_button_ = protective_button;
 }
 
 /**
@@ -74,39 +74,39 @@ bool SafetyMcu::update(const enum SafetyMcuState state, const int state_queue,
                        const bool fatal_error, const bool error,
                        const bool emergency_button, const bool protective_button)
 {
-  bool isChanged = false;
+    bool isChanged = false;
 
-  if (this->getState() != state)
-  {
-    this->state_ = state;
-    isChanged = true;
-  }
-  if (this->getStateQueue() != state_queue)
-  {
-    this->state_queue_ = state_queue;
-    isChanged = true;
-  }
-  if (this->isFatalError() != fatal_error)
-  {
-    this->fatal_error_ = fatal_error;
-    isChanged = true;
-  }
-  if (this->isError() != error)
-  {
-    this->error_ = error;
-    isChanged = true;
-  }
-  if (this->isEmergencyButton() != emergency_button)
-  {
-    this->emergency_button_ = emergency_button;
-    isChanged = true;
-  }
-  if (this->isProtectiveButton() != protective_button)
-  {
-    this->protective_button_ = protective_button;
-    isChanged = true;
-  }
-  return isChanged;
+    if (this->getState() != state)
+    {
+        this->state_ = state;
+        isChanged = true;
+    }
+    if (this->getStateQueue() != state_queue)
+    {
+        this->state_queue_ = state_queue;
+        isChanged = true;
+    }
+    if (this->isFatalError() != fatal_error)
+    {
+        this->fatal_error_ = fatal_error;
+        isChanged = true;
+    }
+    if (this->isError() != error)
+    {
+        this->error_ = error;
+        isChanged = true;
+    }
+    if (this->isEmergencyButton() != emergency_button)
+    {
+        this->emergency_button_ = emergency_button;
+        isChanged = true;
+    }
+    if (this->isProtectiveButton() != protective_button)
+    {
+        this->protective_button_ = protective_button;
+        isChanged = true;
+    }
+    return isChanged;
 }
 
 /**
@@ -115,46 +115,46 @@ bool SafetyMcu::update(const enum SafetyMcuState state, const int state_queue,
  */
 bool denso_cobotta_lib::cobotta::SafetyMcu::canMoveState()
 {
-  /*
+    /*
    * On fatal error, DO NOT USE any commands
    * XXX: watch dog timer
    */
-  if (this->isFatalError() || this->getParent()->getDriver()->isFatalError())
-  {
-    /* Fatal Error */
-    Message::putRosConsole(TAG, 0x85400001);
-    return false;
-  }
-  /* emergency */
-  if (this->isEmergencyButton())
-  {
-    /* Turn OFF Emergency-stop and execute the command clear_safe_state. */
-    Message::putRosConsole(TAG, 0x81400016);
-    return false;
-  }
-  /* protective */
-  if (this->isProtectiveButton())
-  {
-    /* Turn OFF Protective-stop signal to execute the command. */
-    Message::putRosConsole(TAG, 0x81400019);
-    return false;
-  }
-  /* @motor_on */
-  if (this->getParent()->getMotor()->isRunning())
-  {
-    /* You cannot execute a command while motor power is ON. */
-    Message::putRosConsole(TAG, 0x8140001D);
-    return false;
+    if (this->isFatalError() || this->getParent()->getDriver()->isFatalError())
+    {
+        /* Fatal Error */
+        Message::putRosConsole(TAG, 0x85400001);
+        return false;
+    }
+    /* emergency */
+    if (this->isEmergencyButton())
+    {
+        /* Turn OFF Emergency-stop and execute the command clear_safe_state. */
+        Message::putRosConsole(TAG, 0x81400016);
+        return false;
+    }
+    /* protective */
+    if (this->isProtectiveButton())
+    {
+        /* Turn OFF Protective-stop signal to execute the command. */
+        Message::putRosConsole(TAG, 0x81400019);
+        return false;
+    }
+    /* @motor_on */
+    if (this->getParent()->getMotor()->isRunning())
+    {
+        /* You cannot execute a command while motor power is ON. */
+        Message::putRosConsole(TAG, 0x8140001D);
+        return false;
 
-  }
-  /* @brake_release */
-  if (!this->getParent()->getBrake()->isLocked())
-  {
-    /* Lock the brake to execute the command. */
-    Message::putRosConsole(TAG, 0x8140001B);
-    return false;
-  }
-  return true;
+    }
+    /* @brake_release */
+    if (!this->getParent()->getBrake()->isLocked())
+    {
+        /* Lock the brake to execute the command. */
+        Message::putRosConsole(TAG, 0x8140001B);
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -165,54 +165,58 @@ bool denso_cobotta_lib::cobotta::SafetyMcu::canMoveState()
  */
 void SafetyMcu::moveToStandby() throw(CobottaException, std::runtime_error)
 {
-  /* check */
-  if (!this->canMoveState())
-  {
-    // It can not execute in the current state.
-    throw CobottaException(0x0F20FFFF);
-  }
-  if (this->getState() == SafetyMcuState::StandBy)
-    return;
-  if (this->isNormal())
-  {
-    /* Invalid parameter */
-    throw CobottaException(0x8340005A);
-  }
-
-  ROS_INFO("%s: Being in a standby...", TAG);
-  /* waiting for zero of state queue */
-  if (this->getStateQueue())
-  {
-    while (this->getStateQueue())
-    {
-      ros::Duration(cobotta_common::getPeriod()).sleep();
-      //Another place where it needs to update
-      parent_->update();
-    }
-  }
-
-  /* start */
-  if (this->isError() || this->isFatalError())
-  {
-    /* moving time: 100ms */
-    ros::Duration(0.1).sleep();
-  }
-  this->writeHwState(this->getParent()->getFd(), SafetyMcuCommand::StandBy);
-  /* moving time: 500ms */
-  ros::Duration(0.5).sleep();
-  /* sync */
-  while (this->getState() != SafetyMcuState::StandBy)
-  {
-    if (this->isEmergencyButton() || this->isProtectiveButton())
-      throw CobottaException(0x83201F83); /* Operation failed */
-    if (this->isFatalError())
-      throw CobottaException(0x854000F0); /* Fatal error occurred. */
-
-    ros::Duration(cobotta_common::getPeriod()).sleep();
     //Another place where it needs to update
     parent_->update();
-  }
-  ROS_INFO("%s: ...It has been in a standby state.", TAG);
+    /* check */
+    if (!this->canMoveState())
+    {
+        // It can not execute in the current state.
+        throw CobottaException(0x0F20FFFF);
+    }
+    if (this->getState() == SafetyMcuState::StandBy)
+        return;
+    if (this->isNormal())
+    {
+        /* Invalid parameter */
+        throw CobottaException(0x8340005A);
+    }
+
+    ROS_INFO("%s: Being in a standby...", TAG);
+    /* waiting for zero of state queue */
+    if (this->getStateQueue())
+    {
+        while (this->getStateQueue())
+        {
+            ros::Duration(cobotta_common::getPeriod()).sleep();
+            //Another place where it needs to update. Here it also needs to dequeue
+            parent_->update();
+            dequeue();
+        }
+    }
+
+    /* start */
+    if (this->isError() || this->isFatalError())
+    {
+        /* moving time: 100ms */
+        ros::Duration(0.1).sleep();
+    }
+    this->writeHwState(this->getParent()->getFd(), SafetyMcuCommand::StandBy);
+    /* moving time: 500ms */
+    ros::Duration(0.5).sleep();
+    /* sync */
+    while (this->getState() != SafetyMcuState::StandBy)
+    {
+        if (this->isEmergencyButton() || this->isProtectiveButton())
+            throw CobottaException(0x83201F83); /* Operation failed */
+        if (this->isFatalError())
+            throw CobottaException(0x854000F0); /* Fatal error occurred. */
+
+        ros::Duration(cobotta_common::getPeriod()).sleep();
+        //Another place where it needs to update
+        parent_->update();
+        dequeue();
+    }
+    ROS_INFO("%s: ...It has been in a standby state.", TAG);
 }
 
 /**
@@ -223,44 +227,45 @@ void SafetyMcu::moveToStandby() throw(CobottaException, std::runtime_error)
  */
 void SafetyMcu::moveToNormal() throw(CobottaException, std::runtime_error)
 {
-  /* check */
-  if (!this->canMoveState())
-  {
-    // It can not execute in the current state.
-    throw CobottaException(0x0F20FFFF);
-  }
+    /* check */
+    if (!this->canMoveState())
+    {
+        // It can not execute in the current state.
+        throw CobottaException(0x0F20FFFF);
+    }
 
-  /* @normal */
-  if (this->getState() == SafetyMcuState::Normal)
-    return;
+    /* @normal */
+    if (this->getState() == SafetyMcuState::Normal)
+        return;
 
-  /* safe state -> standby */
-  if (this->getState() == SafetyMcuState::SafeState)
-  {
-    this->moveToStandby();
-  }
-  /* standby -> normal */
-  ROS_INFO("%s: Being in a normal...", TAG);
-  /* moving time: 500ms */
-  ros::Duration(0.5).sleep();
-  /* move */
-  this->writeHwState(this->getParent()->getFd(), SafetyMcuCommand::Normal);
-  /* moving time: 24ms */
-  ros::Duration(0.024).sleep();
-  /* sync */
-  while (this->getState() != SafetyMcuState::Normal)
-  {
-    if (this->isEmergencyButton() || this->isProtectiveButton())
-      throw CobottaException(0x83201F83); /* Operation failed */
-    if (this->isFatalError() || this->isError())
-      throw CobottaException(0x83201F83); /* Operation failed */
+    /* safe state -> standby */
+    if (this->getState() == SafetyMcuState::SafeState)
+    {
+        this->moveToStandby();
+    }
+    /* standby -> normal */
+    ROS_INFO("%s: Being in a normal...", TAG);
+    /* moving time: 500ms */
+    ros::Duration(0.5).sleep();
+    /* move */
+    this->writeHwState(this->getParent()->getFd(), SafetyMcuCommand::Normal);
+    /* moving time: 24ms */
+    ros::Duration(0.024).sleep();
+    /* sync */
+    while (this->getState() != SafetyMcuState::Normal)
+    {
+        if (this->isEmergencyButton() || this->isProtectiveButton())
+            throw CobottaException(0x83201F83); /* Operation failed */
+        if (this->isFatalError() || this->isError())
+            throw CobottaException(0x83201F83); /* Operation failed */
 
-    ros::Duration(cobotta_common::getPeriod()).sleep();
+        ros::Duration(cobotta_common::getPeriod()).sleep();
 
-    //This function expects that another thread updates the state???
-    parent_->update();
-  }
-  ROS_INFO("%s: ...It has been in a normal state.", TAG);
+        //This function expects that another thread updates the state???
+        parent_->update();
+        dequeue();
+    }
+    ROS_INFO("%s: ...It has been in a normal state.", TAG);
 }
 
 /**
@@ -271,25 +276,25 @@ void SafetyMcu::moveToNormal() throw(CobottaException, std::runtime_error)
  */
 void SafetyMcu::forceMoveToStandby() throw(CobottaException, std::runtime_error)
 {
-  ROS_INFO("%s: To clear watchdog-timer error...", TAG);
+    ROS_INFO("%s: To clear watchdog-timer error...", TAG);
 
-  /* moving time: 100ms */
-  ros::Duration(0.1).sleep();
+    /* moving time: 100ms */
+    ros::Duration(0.1).sleep();
 
-  this->writeHwState(this->getParent()->getFd(), SafetyMcuCommand::StandBy);
-  /* moving time: 500ms */
-  ros::Duration(0.5).sleep();
-  /* sync */
-  while (this->getState() != SafetyMcuState::StandBy)
-  {
-    if (this->isEmergencyButton() || this->isProtectiveButton())
-      throw CobottaException(0x83201F83); /* Operation failed */
-    if (this->isFatalError())
-      throw CobottaException(0x854000F0); /* Fatal error occurred. */
+    this->writeHwState(this->getParent()->getFd(), SafetyMcuCommand::StandBy);
+    /* moving time: 500ms */
+    ros::Duration(0.5).sleep();
+    /* sync */
+    while (this->getState() != SafetyMcuState::StandBy)
+    {
+        if (this->isEmergencyButton() || this->isProtectiveButton())
+            throw CobottaException(0x83201F83); /* Operation failed */
+        if (this->isFatalError())
+            throw CobottaException(0x854000F0); /* Fatal error occurred. */
 
-    ros::Duration(cobotta_common::getPeriod()).sleep();
-  }
-  ROS_INFO("%s: ...Done.", TAG);
+        ros::Duration(cobotta_common::getPeriod()).sleep();
+    }
+    ROS_INFO("%s: ...Done.", TAG);
 }
 
 /**
@@ -300,7 +305,7 @@ void SafetyMcu::forceMoveToStandby() throw(CobottaException, std::runtime_error)
  */
 struct StateCode SafetyMcu::dequeue() throw(CobottaException, std::runtime_error)
 {
-  return this->readHwQueue(this->getParent()->getFd());
+    return this->readHwQueue(this->getParent()->getFd());
 }
 
 /**
@@ -312,27 +317,27 @@ struct StateCode SafetyMcu::dequeue() throw(CobottaException, std::runtime_error
  */
 void SafetyMcu::writeHwState(const int fd, const enum SafetyMcuCommand command) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  IOCTL_DATA_SAFETY_SEND dat;
-  int myerrno;
+    int ret;
+    IOCTL_DATA_SAFETY_SEND dat;
+    int myerrno;
 
-  memset(&dat, 0, sizeof(dat));
-  errno = 0;
-  dat.code = (uint32_t)command;
-  ret = ioctl(fd, COBOTTA_IOCTL_SAFETY_SEND, &dat);
-  myerrno = errno;
-  ROS_DEBUG("%s: COBOTTA_IOCTL_SAFETY_SEND ret=%d errno=%d result=%lX",
-            TAG, ret, myerrno, dat.result);
-  if (ret)
-  {
-    ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_SAFETY_SEND): %s",
-              TAG, std::strerror(myerrno));
-    if (myerrno == ECANCELED)
+    memset(&dat, 0, sizeof(dat));
+    errno = 0;
+    dat.code = (uint32_t)command;
+    ret = ioctl(fd, COBOTTA_IOCTL_SAFETY_SEND, &dat);
+    myerrno = errno;
+    ROS_DEBUG("%s: COBOTTA_IOCTL_SAFETY_SEND ret=%d errno=%d result=%lX",
+              TAG, ret, myerrno, dat.result);
+    if (ret)
     {
-      throw CobottaException(dat.result);
+        ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_SAFETY_SEND): %s",
+                  TAG, std::strerror(myerrno));
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
 }
 
 /**
@@ -344,60 +349,60 @@ void SafetyMcu::writeHwState(const int fd, const enum SafetyMcuCommand command) 
  */
 struct StateCode SafetyMcu::readHwQueue(const int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  IOCTL_DATA_SAFETY_CHECKSTATE dat;
-  int myerrno;
+    int ret;
+    IOCTL_DATA_SAFETY_CHECKSTATE dat;
+    int myerrno;
 
-  memset(&dat, 0, sizeof(dat));
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_SAFETY_CHECKSTATE, &dat);
-  myerrno = errno;
-  ROS_DEBUG("%s: COBOTTA_IOCTL_SAFETY_CHECKSTATE ret=%d errno=%d result=%lX",
-            TAG, ret, myerrno, dat.result);
-  if (ret)
-  {
-    ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_SAFETY_CHECKSTATE): %s",
-              TAG, std::strerror(myerrno));
-    if (myerrno == ECANCELED)
+    memset(&dat, 0, sizeof(dat));
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_SAFETY_CHECKSTATE, &dat);
+    myerrno = errno;
+    ROS_DEBUG("%s: COBOTTA_IOCTL_SAFETY_CHECKSTATE ret=%d errno=%d result=%lX",
+              TAG, ret, myerrno, dat.result);
+    if (ret)
     {
-      throw CobottaException(dat.result);
+        ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_SAFETY_CHECKSTATE): %s",
+                  TAG, std::strerror(myerrno));
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  return StateCode{dat.err.error_code, dat.err.sub_code};
+    return StateCode{dat.err.error_code, dat.err.sub_code};
 }
 
 bool SafetyMcu::isNormal() const
 {
-  if (this->getState() == SafetyMcuState::Normal)
-    return true;
-  return false;
+    if (this->getState() == SafetyMcuState::Normal)
+        return true;
+    return false;
 }
 bool SafetyMcu::isSafeState() const
 {
-  if (this->getState() == SafetyMcuState::SafeState)
-    return true;
-  return false;
+    if (this->getState() == SafetyMcuState::SafeState)
+        return true;
+    return false;
 }
 
 bool SafetyMcu::isEmergencyButton() const
 {
-  return emergency_button_;
+    return emergency_button_;
 }
 
 bool SafetyMcu::isError() const
 {
-  return error_;
+    return error_;
 }
 
 bool SafetyMcu::isFatalError() const
 {
-  return fatal_error_;
+    return fatal_error_;
 }
 
 bool SafetyMcu::isProtectiveButton() const
 {
-  return protective_button_;
+    return protective_button_;
 }
 
 /**
@@ -406,17 +411,17 @@ bool SafetyMcu::isProtectiveButton() const
  */
 enum SafetyMcuState SafetyMcu::getState() const
 {
-  return state_;
+    return state_;
 }
 
 int SafetyMcu::getStateQueue() const
 {
-  return state_queue_;
+    return state_queue_;
 }
 
 std::shared_ptr<Cobotta> SafetyMcu::getParent() const
 {
-  return parent_;
+    return parent_;
 }
 
 } /* namespace cobotta */
