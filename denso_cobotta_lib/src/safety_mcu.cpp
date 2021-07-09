@@ -186,6 +186,8 @@ void SafetyMcu::moveToStandby() throw(CobottaException, std::runtime_error)
     while (this->getStateQueue())
     {
       ros::Duration(cobotta_common::getPeriod()).sleep();
+      //Another place where it needs to update
+      parent_->update();
     }
   }
 
@@ -207,6 +209,8 @@ void SafetyMcu::moveToStandby() throw(CobottaException, std::runtime_error)
       throw CobottaException(0x854000F0); /* Fatal error occurred. */
 
     ros::Duration(cobotta_common::getPeriod()).sleep();
+    //Another place where it needs to update
+    parent_->update();
   }
   ROS_INFO("%s: ...It has been in a standby state.", TAG);
 }
