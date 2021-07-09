@@ -121,11 +121,12 @@ public:
                                  uint16_t& recv_value) throw(CobottaException, std::invalid_argument,
                                                              std::runtime_error);
 
-private:
   static DriverVersion readHwVersion(int fd) throw(CobottaException, std::runtime_error);
   static void writeHwClear(int fd) throw(CobottaException, std::runtime_error);
   static StateCode readHwQueue(int fd, long arm_no) throw(CobottaException, std::runtime_error);
   static DriverStateInfo readHwState(int fd) throw(CobottaException, std::runtime_error);
+
+private:
 
   std::shared_ptr<Cobotta> parent_;
 
