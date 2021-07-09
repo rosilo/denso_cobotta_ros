@@ -38,7 +38,7 @@ namespace cobotta
  */
 Motor::Motor(std::shared_ptr<Cobotta> parent)
 {
-  this->parent_ = parent;
+    this->parent_ = parent;
 }
 
 /**
@@ -48,8 +48,8 @@ Motor::Motor(std::shared_ptr<Cobotta> parent)
  */
 Motor::Motor(std::shared_ptr<Cobotta> parent, const enum MotorState state)
 {
-  this->parent_ = parent;
-  this->state_ = state;
+    this->parent_ = parent;
+    this->state_ = state;
 }
 
 /**
@@ -59,11 +59,11 @@ Motor::Motor(std::shared_ptr<Cobotta> parent, const enum MotorState state)
  */
 bool Motor::update(const enum MotorState state)
 {
-  if (this->getState() == state)
-    return false;
+    if (this->getState() == state)
+        return false;
 
-  this->state_ = state;
-  return true;
+    this->state_ = state;
+    return true;
 }
 
 /**
@@ -71,19 +71,19 @@ bool Motor::update(const enum MotorState state)
  */
 bool Motor::shouldStop()
 {
-  if ((this->getState() == MotorState::SlowDownStop)
-      || (this->getState() == MotorState::Off))
+    if ((this->getState() == MotorState::SlowDownStop)
+            || (this->getState() == MotorState::Off))
+        return false;
+
+    /* SafetyMCU state */
+    if (this->getParent()->getSafetyMcu()->isSafeState())
+        return true;
+    /* fatal error */
+    if (this->getParent()->getDriver()->isFatalError())
+        return true;
+    /* XXX: Lv4 error */
+
     return false;
-
-  /* SafetyMCU state */
-  if (this->getParent()->getSafetyMcu()->isSafeState())
-    return true;
-  /* fatal error */
-  if (this->getParent()->getDriver()->isFatalError())
-    return true;
-  /* XXX: Lv4 error */
-
-  return false;
 }
 
 /**
@@ -91,10 +91,10 @@ bool Motor::shouldStop()
  */
 bool Motor::isRunning(void) const
 {
-  if (this->getState() == MotorState::On)
-    return true;
+    if (this->getState() == MotorState::On)
+        return true;
 
-  return false;
+    return false;
 }
 
 /**
@@ -102,50 +102,50 @@ bool Motor::isRunning(void) const
  */
 bool Motor::canStart(void) const
 {
-  if (this->getParent()->getSafetyMcu()->isFatalError()
-      || this->getParent()->getDriver()->isFatalError())
-  {
-    // Fatal Error
-    Message::putRosConsole(TAG, 0x85400001);
-    return false;
-  }
-  /* emergency button */
-  if (this->getParent()->getSafetyMcu()->isEmergencyButton())
-  {
-    // Turn OFF Emergency-stop and execute the command clear_safe_state.
-    Message::putRosConsole(TAG, 0x81400016);
-    return false;
-  }
-  /* protective button */
-  if (this->getParent()->getSafetyMcu()->isProtectiveButton())
-  {
-    // Turn OFF Protective-stop signal to execute the command.
-    Message::putRosConsole(TAG, 0x81400019);
-    return false;
-  }
-  /* SafetyMCU state */
-  if (this->getParent()->getSafetyMcu()->isSafeState())
-  {
-    // You cannot execute a command while motion preparation has not been performed.
-    Message::putRosConsole(TAG, 0x81501070);
-    return false;
-  }
-  /* other errors */
-  if (this->getParent()->getDriver()->isError())
-  {
-    // You cannot execute a command while an error occurs.
-    Message::putRosConsole(TAG, 0x81400015);
-    return false;
-  }
-  /* brake */
-  if (!this->getParent()->getBrake()->isLocked())
-  {
-    // Lock the brake to execute the command.
-    Message::putRosConsole(TAG, 0x8140001B);
-    return false;
-  }
+    if (this->getParent()->getSafetyMcu()->isFatalError()
+            || this->getParent()->getDriver()->isFatalError())
+    {
+        // Fatal Error
+        Message::putRosConsole(TAG, 0x85400001);
+        return false;
+    }
+    /* emergency button */
+    if (this->getParent()->getSafetyMcu()->isEmergencyButton())
+    {
+        // Turn OFF Emergency-stop and execute the command clear_safe_state.
+        Message::putRosConsole(TAG, 0x81400016);
+        return false;
+    }
+    /* protective button */
+    if (this->getParent()->getSafetyMcu()->isProtectiveButton())
+    {
+        // Turn OFF Protective-stop signal to execute the command.
+        Message::putRosConsole(TAG, 0x81400019);
+        return false;
+    }
+    /* SafetyMCU state */
+    if (this->getParent()->getSafetyMcu()->isSafeState())
+    {
+        // You cannot execute a command while motion preparation has not been performed.
+        Message::putRosConsole(TAG, 0x81501070);
+        return false;
+    }
+    /* other errors */
+    if (this->getParent()->getDriver()->isError())
+    {
+        // You cannot execute a command while an error occurs.
+        Message::putRosConsole(TAG, 0x81400015);
+        return false;
+    }
+    /* brake */
+    if (!this->getParent()->getBrake()->isLocked())
+    {
+        // Lock the brake to execute the command.
+        Message::putRosConsole(TAG, 0x8140001B);
+        return false;
+    }
 
-  return true;
+    return true;
 }
 
 /**
@@ -155,35 +155,38 @@ bool Motor::canStart(void) const
  */
 void Motor::start(void) throw(CobottaException, std::runtime_error)
 {
-  /* check */
-  if (this->getState() != MotorState::Off)
-  {
-    return;
-  }
-  if (!this->canStart())
-  {
-    // It can not execute in the current state.
-    throw CobottaException(0x0F20FFFF);
-  }
-
-  /* start */
-  ROS_INFO("%s: Starting...", TAG);
-  this->writeHwOn(this->getParent()->getFd());
-  /* sync */
-  while (this->getState() != MotorState::On)
-  {
-    if (this->getParent()->getDriver()->isFatalError()
-        || this->getParent()->getDriver()->isError())
-      throw CobottaException(0x83201F83); /* Operation failed */
-    if (this->getParent()->getSafetyMcu()->isSafeState())
-      throw CobottaException(0x83201F83); /* Operation failed */
-
-    ros::Duration(cobotta_common::getPeriod()).sleep();
-
     //This was also waiting for an external thread to update the robot state
     parent_->update();
-  }
-  ROS_INFO("%s: ... Motor has started.", TAG);
+
+    /* check */
+    if (this->getState() != MotorState::Off)
+    {
+        return;
+    }
+    if (!this->canStart())
+    {
+        // It can not execute in the current state.
+        throw CobottaException(0x0F20FFFF);
+    }
+
+    /* start */
+    ROS_INFO("%s: Starting...", TAG);
+    this->writeHwOn(this->getParent()->getFd());
+    /* sync */
+    while (this->getState() != MotorState::On)
+    {
+        if (this->getParent()->getDriver()->isFatalError()
+                || this->getParent()->getDriver()->isError())
+            throw CobottaException(0x83201F83); /* Operation failed */
+        if (this->getParent()->getSafetyMcu()->isSafeState())
+            throw CobottaException(0x83201F83); /* Operation failed */
+
+        ros::Duration(cobotta_common::getPeriod()).sleep();
+
+        //This was also waiting for an external thread to update the robot state
+        parent_->update();
+    }
+    ROS_INFO("%s: ... Motor has started.", TAG);
 }
 
 /**
@@ -193,24 +196,24 @@ void Motor::start(void) throw(CobottaException, std::runtime_error)
  */
 void Motor::stop(void) throw(CobottaException, std::runtime_error)
 {
-  /*
+    /*
    * check
    *   except for MotorState::MOTOR_OFF to stop() brake::lock on error.
    */
-  if (this->getState() == MotorState::Off
-      || this->getState() == MotorState::SlowDownStop)
-  {
-    return;
-  }
-  /* off */
-  ROS_INFO("%s: Stopping...", TAG);
-  this->writeHwOff(this->getParent()->getFd());
-  /* sync */
-  while (this->getState() == MotorState::Off)
-  {
-    ros::Duration(cobotta_common::getPeriod()).sleep();
-  }
-  ROS_INFO("%s: ... Motor has stopped.", TAG);
+    if (this->getState() == MotorState::Off
+            || this->getState() == MotorState::SlowDownStop)
+    {
+        return;
+    }
+    /* off */
+    ROS_INFO("%s: Stopping...", TAG);
+    this->writeHwOff(this->getParent()->getFd());
+    /* sync */
+    while (this->getState() == MotorState::Off)
+    {
+        ros::Duration(cobotta_common::getPeriod()).sleep();
+    }
+    ROS_INFO("%s: ... Motor has stopped.", TAG);
 }
 
 /**
@@ -220,8 +223,8 @@ void Motor::stop(void) throw(CobottaException, std::runtime_error)
  */
 void Motor::sendStop(int fd) throw(CobottaException, std::runtime_error)
 {
-  ROS_INFO("%s: Stop anyway.", TAG);
-  Motor::writeHwOff(fd);
+    ROS_INFO("%s: Stop anyway.", TAG);
+    Motor::writeHwOff(fd);
 }
 
 /**
@@ -232,23 +235,23 @@ void Motor::sendStop(int fd) throw(CobottaException, std::runtime_error)
  */
 void Motor::writeHwOn(int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  IOCTL_DATA_RESULT dat;
-  int myerrno;
+    int ret;
+    IOCTL_DATA_RESULT dat;
+    int myerrno;
 
-  memset(&dat, 0, sizeof(dat));
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_MOTOR_ON, &dat);
-  myerrno = errno;
-  ROS_DEBUG("%s: COBOTTA_IOCTL_MOTOR_ON ret=%d errno=%d result=%lX",
-            TAG, ret, myerrno, dat.result);
-  if (ret) {
-    ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_MOTOR_ON): %s", TAG, std::strerror(myerrno));
-    if (myerrno == ECANCELED) {
-      throw CobottaException(dat.result);
+    memset(&dat, 0, sizeof(dat));
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_MOTOR_ON, &dat);
+    myerrno = errno;
+    ROS_DEBUG("%s: COBOTTA_IOCTL_MOTOR_ON ret=%d errno=%d result=%lX",
+              TAG, ret, myerrno, dat.result);
+    if (ret) {
+        ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_MOTOR_ON): %s", TAG, std::strerror(myerrno));
+        if (myerrno == ECANCELED) {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
 }
 
 /**
@@ -259,23 +262,23 @@ void Motor::writeHwOn(int fd) throw(CobottaException, std::runtime_error)
  */
 void Motor::writeHwOff(int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  IOCTL_DATA_RESULT dat;
-  int myerrno;
+    int ret;
+    IOCTL_DATA_RESULT dat;
+    int myerrno;
 
-  memset(&dat, 0, sizeof(dat));
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_MOTOR_OFF, &dat);
-  myerrno = errno;
-  ROS_DEBUG("%s: COBOTTA_IOCTL_MOTOR_OFF ret=%d errno=%d result=%lX",
-            TAG, ret, myerrno, dat.result);
-  if (ret) {
-    ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_MOTOR_OFF): %s", TAG, std::strerror(myerrno));
-    if (myerrno == ECANCELED) {
-      throw CobottaException(dat.result);
+    memset(&dat, 0, sizeof(dat));
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_MOTOR_OFF, &dat);
+    myerrno = errno;
+    ROS_DEBUG("%s: COBOTTA_IOCTL_MOTOR_OFF ret=%d errno=%d result=%lX",
+              TAG, ret, myerrno, dat.result);
+    if (ret) {
+        ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_MOTOR_OFF): %s", TAG, std::strerror(myerrno));
+        if (myerrno == ECANCELED) {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
 }
 
 /**
@@ -287,34 +290,34 @@ void Motor::writeHwOff(int fd) throw(CobottaException, std::runtime_error)
  */
 int Motor::readHw(int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  IOCTL_DATA_MOTOR_STATE dat;
-  int myerrno;
+    int ret;
+    IOCTL_DATA_MOTOR_STATE dat;
+    int myerrno;
 
-  memset(&dat, 0, sizeof(dat));
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_MOTOR_STATE, &dat);
-  myerrno = errno;
-  ROS_DEBUG("%s: COBOTTA_IOCTL_MOTOR_STATE ret=%d errno=%d result=%lX",
-            TAG, ret, myerrno, dat.result);
-  if (ret) {
-    ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_MOTOR_STATE): %s", TAG, std::strerror(myerrno));
-    if (myerrno == ECANCELED) {
-      throw CobottaException(dat.result);
+    memset(&dat, 0, sizeof(dat));
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_MOTOR_STATE, &dat);
+    myerrno = errno;
+    ROS_DEBUG("%s: COBOTTA_IOCTL_MOTOR_STATE ret=%d errno=%d result=%lX",
+              TAG, ret, myerrno, dat.result);
+    if (ret) {
+        ROS_ERROR("%s: ioctl(COBOTTA_IOCTL_MOTOR_STATE): %s", TAG, std::strerror(myerrno));
+        if (myerrno == ECANCELED) {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  return dat.state;
+    return dat.state;
 }
 
 enum MotorState Motor::getState() const
 {
-  return state_;
+    return state_;
 }
 
 std::shared_ptr<cobotta::Cobotta> Motor::getParent() const
 {
-  return parent_;
+    return parent_;
 }
 } /* namespace cobotta */
 } /* namespace denso_cobotta_lib */
