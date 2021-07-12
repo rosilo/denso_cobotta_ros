@@ -32,7 +32,7 @@ namespace cobotta
  */
 Driver::Driver(const std::shared_ptr<Cobotta>& parent)
 {
-  parent_ = parent;
+    parent_ = parent;
 }
 
 /**
@@ -44,20 +44,20 @@ Driver::Driver(const std::shared_ptr<Cobotta>& parent)
  */
 int Driver::openDeviceFile() throw(CobottaException, std::runtime_error)
 {
-  int fd;
-  int myerrno;
+    int fd;
+    int myerrno;
 
-  errno = 0;
-  fd = open(cobotta_common::PATH_DEVFILE, O_RDWR);
-  myerrno = errno;
-  if (fd < 0)
-  {
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  // Read version information.
-  version_ = Driver::readHwVersion(fd);
+    errno = 0;
+    fd = open(cobotta_common::PATH_DEVFILE, O_RDWR);
+    myerrno = errno;
+    if (fd < 0)
+    {
+        throw std::runtime_error(std::strerror(myerrno));
+    }
+    // Read version information.
+    version_ = Driver::readHwVersion(fd);
 
-  return fd;
+    return fd;
 }
 
 /**
@@ -67,7 +67,7 @@ int Driver::openDeviceFile() throw(CobottaException, std::runtime_error)
  */
 void Driver::closeDeviceFile(int fd)
 {
-  close(fd);
+    close(fd);
 }
 
 /**
@@ -82,24 +82,24 @@ void Driver::closeDeviceFile(int fd)
 bool Driver::update(const std::array<uint32_t, ARM_MAX>& driver_queue_size, bool driver_error, bool driver_fatal_error,
                     bool ip_reset_button)
 {
-  bool changed = false;
+    bool changed = false;
 
-  changed |= queue_size_ != driver_queue_size;
-  queue_size_ = driver_queue_size;
+    changed |= queue_size_ != driver_queue_size;
+    queue_size_ = driver_queue_size;
 
-  changed |= ip_reset_button_ != ip_reset_button;
-  ip_reset_button_ = ip_reset_button;
+    changed |= ip_reset_button_ != ip_reset_button;
+    ip_reset_button_ = ip_reset_button;
 
-  changed |= error_ != driver_error;
-  error_ = driver_error;
+    changed |= error_ != driver_error;
+    error_ = driver_error;
 
-  changed |= fatal_error_ != driver_fatal_error;
-  fatal_error_ = driver_fatal_error;
+    changed |= fatal_error_ != driver_fatal_error;
+    fatal_error_ = driver_fatal_error;
 
-  changed |= ip_reset_button_ != ip_reset_button;
-  ip_reset_button_ = ip_reset_button;
+    changed |= ip_reset_button_ != ip_reset_button;
+    ip_reset_button_ = ip_reset_button;
 
-  return changed;
+    return changed;
 }
 
 /**
@@ -111,12 +111,12 @@ bool Driver::update(const std::array<uint32_t, ARM_MAX>& driver_queue_size, bool
  */
 bool Driver::isTargetVersion() const
 {
-  if (this->getVersion().driver_major != cobotta_common::DRIVER_VERSION_MAJOR)
-    return false;
-  if (this->getVersion().driver_minor != cobotta_common::DRIVER_VERSION_MINOR)
-    return false;
+    if (this->getVersion().driver_major != cobotta_common::DRIVER_VERSION_MAJOR)
+        return false;
+    if (this->getVersion().driver_minor != cobotta_common::DRIVER_VERSION_MINOR)
+        return false;
 
-  return true;
+    return true;
 }
 
 /**
@@ -125,13 +125,13 @@ bool Driver::isTargetVersion() const
  */
 void Driver::printVersion() const
 {
-  ROS_INFO("%s: Linux driver: %d.%d.%d-%d (Requirements: %d.%d.N-M)", TAG, this->getVersion().driver_major,
-           this->getVersion().driver_minor, this->getVersion().driver_revision, this->getVersion().driver_build,
-           cobotta_common::DRIVER_VERSION_MAJOR, cobotta_common::DRIVER_VERSION_MINOR);
-  ROS_INFO("%s: FPGA MAIN: %s", TAG, this->getVersion().fpga_main.c_str());
-  ROS_INFO("%s: FPGA MAIN backup: %s", TAG, this->getVersion().fpga_main_backup.c_str());
-  ROS_INFO("%s: ServoMCU: %s", TAG, this->getVersion().mcu.c_str());
-  ROS_INFO("%s: SafetyMCU: %s", TAG, this->getVersion().safety_mcu.c_str());
+    ROS_INFO("%s: Linux driver: %d.%d.%d-%d (Requirements: %d.%d.N-M)", TAG, this->getVersion().driver_major,
+             this->getVersion().driver_minor, this->getVersion().driver_revision, this->getVersion().driver_build,
+             cobotta_common::DRIVER_VERSION_MAJOR, cobotta_common::DRIVER_VERSION_MINOR);
+    ROS_INFO("%s: FPGA MAIN: %s", TAG, this->getVersion().fpga_main.c_str());
+    ROS_INFO("%s: FPGA MAIN backup: %s", TAG, this->getVersion().fpga_main_backup.c_str());
+    ROS_INFO("%s: ServoMCU: %s", TAG, this->getVersion().mcu.c_str());
+    ROS_INFO("%s: SafetyMCU: %s", TAG, this->getVersion().safety_mcu.c_str());
 }
 
 /**
@@ -146,36 +146,36 @@ void Driver::printVersion() const
  */
 void Driver::clearError() throw(CobottaException, std::runtime_error)
 {
-  if (isFatalError() || parent_->getSafetyMcu()->isFatalError())
-  {
-    /* Fatal Error */
-    throw CobottaException(0x85400001);
-  }
-  if (!this->isError())
-  {
-    ROS_INFO("%s: No robot error.", TAG);
-    return;
-  }
-
-  /* waiting for zero of state queue */
-  for (long i = 0; i < ARM_MAX; i++)
-  {
-    while (this->getStateQueueSize(i))
+    if (isFatalError() || parent_->getSafetyMcu()->isFatalError())
     {
-      ros::Duration(cobotta_common::getPeriod()).sleep();
+        /* Fatal Error */
+        throw CobottaException(0x85400001);
     }
-  }
+    if (!this->isError())
+    {
+        ROS_INFO("%s: No robot error.", TAG);
+        return;
+    }
 
-  writeHwClear(parent_->getFd());
-  /* sync */
-  while (this->isError())
-  {
-    if (this->isFatalError())
-      throw CobottaException(0x854000F0); /* Fatal error occurred. */
+    /* waiting for zero of state queue */
+    for (long i = 0; i < ARM_MAX; i++)
+    {
+        while (this->getStateQueueSize(i))
+        {
+            ros::Duration(cobotta_common::getPeriod()).sleep();
+        }
+    }
 
-    ros::Duration(cobotta_common::getPeriod()).sleep();
-  }
-  ROS_INFO("%s: ...Clearing error has done.", TAG);
+    writeHwClear(parent_->getFd());
+    /* sync */
+    while (this->isError())
+    {
+        if (this->isFatalError())
+            throw CobottaException(0x854000F0); /* Fatal error occurred. */
+
+        ros::Duration(cobotta_common::getPeriod()).sleep();
+    }
+    ROS_INFO("%s: ...Clearing error has done.", TAG);
 }
 
 /**
@@ -191,8 +191,8 @@ void Driver::clearError() throw(CobottaException, std::runtime_error)
  */
 StateCode Driver::dequeue(long arm_no) throw(CobottaException, std::runtime_error, std::invalid_argument)
 {
-  Driver::checkArmNo(arm_no);
-  return Driver::readHwQueue(parent_->getFd(), arm_no);
+    Driver::checkArmNo(arm_no);
+    return Driver::readHwQueue(parent_->getFd(), arm_no);
 }
 
 /**
@@ -206,7 +206,7 @@ StateCode Driver::dequeue(long arm_no) throw(CobottaException, std::runtime_erro
  */
 DriverStateInfo Driver::receiveAllState() throw(CobottaException, std::runtime_error)
 {
-  return Driver::readHwState(parent_->getFd());
+    return Driver::readHwState(parent_->getFd());
 }
 
 /**
@@ -221,42 +221,42 @@ DriverStateInfo Driver::receiveAllState() throw(CobottaException, std::runtime_e
  */
 DriverVersion Driver::readHwVersion(int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  int myerrno;
-  IOCTL_DATA_GET_VERSION ver{ 0 };
+    int ret;
+    int myerrno;
+    IOCTL_DATA_GET_VERSION ver{ 0 };
 
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_GET_VERSION, &ver);
-  myerrno = errno;
-  if (ret != 0)
-  {
-    if (myerrno == ECANCELED)
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_GET_VERSION, &ver);
+    myerrno = errno;
+    if (ret != 0)
     {
-      throw CobottaException(ver.result);
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(ver.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  DriverVersion driver_ver{ 0 };
+    DriverVersion driver_ver{ 0 };
 
-  driver_ver.driver_major = (ver.driver_ver >> 24) & 0xff;
-  driver_ver.driver_minor = (ver.driver_ver >> 16) & 0xff;
-  driver_ver.driver_revision = (ver.driver_ver >> 8) & 0xff;
-  driver_ver.driver_build = ver.driver_ver & 0xff;
-  driver_ver.fpga_main = ver.fpga_ver[0];
-  driver_ver.fpga_main_backup = ver.fpga_ver[1];
+    driver_ver.driver_major = (ver.driver_ver >> 24) & 0xff;
+    driver_ver.driver_minor = (ver.driver_ver >> 16) & 0xff;
+    driver_ver.driver_revision = (ver.driver_ver >> 8) & 0xff;
+    driver_ver.driver_build = ver.driver_ver & 0xff;
+    driver_ver.fpga_main = ver.fpga_ver[0];
+    driver_ver.fpga_main_backup = ver.fpga_ver[1];
 
-  std::stringstream ss1, ss2;
-  ss1 << std::setfill('0') << std::right << std::hex << std::uppercase << std::setw(4) << ver.servo_mcu_ver[0];
-  ss2 << std::setfill('0') << std::right << std::hex << std::uppercase << std::setw(4) << ver.safety_mcu_ver[0][0]
-      << "," << std::setw(4) << ver.safety_mcu_ver[0][1];
-  for (int i = 1; i < JOINT_MAX + 1; i++)
-  {
-    ss1 << "-" << std::setw(4) << ver.servo_mcu_ver[i];
-    ss2 << "-" << std::setw(4) << ver.safety_mcu_ver[i][0] << "," << std::setw(4) << ver.safety_mcu_ver[i][1];
-  }
-  driver_ver.mcu = ss1.str();
-  driver_ver.safety_mcu = ss2.str();
-  return driver_ver;
+    std::stringstream ss1, ss2;
+    ss1 << std::setfill('0') << std::right << std::hex << std::uppercase << std::setw(4) << ver.servo_mcu_ver[0];
+    ss2 << std::setfill('0') << std::right << std::hex << std::uppercase << std::setw(4) << ver.safety_mcu_ver[0][0]
+            << "," << std::setw(4) << ver.safety_mcu_ver[0][1];
+    for (int i = 1; i < JOINT_MAX + 1; i++)
+    {
+        ss1 << "-" << std::setw(4) << ver.servo_mcu_ver[i];
+        ss2 << "-" << std::setw(4) << ver.safety_mcu_ver[i][0] << "," << std::setw(4) << ver.safety_mcu_ver[i][1];
+    }
+    driver_ver.mcu = ss1.str();
+    driver_ver.safety_mcu = ss2.str();
+    return driver_ver;
 }
 
 /**
@@ -267,22 +267,22 @@ DriverVersion Driver::readHwVersion(int fd) throw(CobottaException, std::runtime
  */
 void Driver::writeHwClear(int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  int myerrno;
-  IOCTL_DATA_RESULT dat{ 0 };
+    int ret;
+    int myerrno;
+    IOCTL_DATA_RESULT dat{ 0 };
 
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_CLR_ERROR, &dat);
-  myerrno = errno;
-  ROS_DEBUG("%s: COBOTTA_IOCTL_CLR_ERROR ret=%d errno=%d result=%lX", TAG, ret, myerrno, dat.result);
-  if (ret)
-  {
-    if (myerrno == ECANCELED)
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_CLR_ERROR, &dat);
+    myerrno = errno;
+    ROS_DEBUG("%s: COBOTTA_IOCTL_CLR_ERROR ret=%d errno=%d result=%lX", TAG, ret, myerrno, dat.result);
+    if (ret)
     {
-      throw CobottaException(dat.result);
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
 }
 
 /**
@@ -294,26 +294,26 @@ void Driver::writeHwClear(int fd) throw(CobottaException, std::runtime_error)
  */
 StateCode Driver::readHwQueue(int fd, long arm_no) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  int myerrno;
-  IOCTL_DATA_CHECKSTATE dat{ 0 };
+    int ret;
+    int myerrno;
+    IOCTL_DATA_CHECKSTATE dat{ 0 };
 
-  dat.arm_no = arm_no;
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_SRV_CHECKSTATE, &dat);
-  myerrno = errno;
-  if (ret)
-  {
-    if (myerrno == ECANCELED)
+    dat.arm_no = arm_no;
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_SRV_CHECKSTATE, &dat);
+    myerrno = errno;
+    if (ret)
     {
-      throw CobottaException(dat.result);
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  StateCode code{ 0 };
-  code.main_code = dat.err.error_code;
-  code.sub_code = dat.err.sub_code;
-  return code;
+    StateCode code{ 0 };
+    code.main_code = dat.err.error_code;
+    code.sub_code = dat.err.sub_code;
+    return code;
 }
 
 /**
@@ -325,55 +325,55 @@ StateCode Driver::readHwQueue(int fd, long arm_no) throw(CobottaException, std::
  */
 DriverStateInfo Driver::readHwState(int fd) throw(CobottaException, std::runtime_error)
 {
-  int ret;
-  int myerrno;
-  IOCTL_DATA_GET_ALLSTATE dat{ 0 };
+    int ret;
+    int myerrno;
+    IOCTL_DATA_GET_ALLSTATE dat{ 0 };
 
-  {
-    errno = 0;
-    ret = ioctl(fd, COBOTTA_IOCTL_GET_ALLSTATE, &dat);
-    myerrno = errno;
-  }
-  if (ret)
-  {
-    if (myerrno == ECANCELED)
     {
-      throw CobottaException(dat.result);
+        errno = 0;
+        ret = ioctl(fd, COBOTTA_IOCTL_GET_ALLSTATE, &dat);
+        myerrno = errno;
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-
-  DriverStateInfo info;
-  for (int i = 0; i < ARM_MAX; i++)
-  {
-    info.driver_queue_size[i] = dat.checkstate_num[i];
-  }
-  info.safety_mcu_queue_size = dat.safety_checkstate_num;
-  info.motor_state = dat.motor_state;
-  info.safety_mcu_state = dat.safety_state;
-  for (int i = 0; i < ARM_MAX; i++)
-  {
-    for (int j = 0; j < JOINT_MAX; j++)
+    if (ret)
     {
-      info.brake_state[i][j] = dat.brake_state[i][j];
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-  }
-  info.emergency_stop = dat.emgstop_state != 0;
-  info.protection_stop = dat.protectstop_state != 0;
-  info.function_button = dat.function_btn_state != 0;
-  info.plus_button = dat.hand_open_btn_state != 0;
-  info.minus_button = dat.hand_close_btn_state != 0;
-  info.ip_reset_button = dat.ip_reset_btn_state != 0;
-  info.gripper_state = dat.gripper_state != 0;
-  info.driver_fatal_error = dat.fatal_error & 0b01;
-  info.driver_error = dat.error != 0;
-  info.safety_mcu_fatal_error = dat.fatal_error & 0b10;
-  info.safety_mcu_error = dat.safety_error != 0;
-  info.mini_io_input = dat.mini_in;
-  info.mini_io_output = dat.mini_out;
-  info.gripper_state = dat.gripper_state != 0;
 
-  return info;
+    DriverStateInfo info;
+    for (int i = 0; i < ARM_MAX; i++)
+    {
+        info.driver_queue_size[i] = dat.checkstate_num[i];
+    }
+    info.safety_mcu_queue_size = dat.safety_checkstate_num;
+    info.motor_state = dat.motor_state;
+    info.safety_mcu_state = dat.safety_state;
+    for (int i = 0; i < ARM_MAX; i++)
+    {
+        for (int j = 0; j < JOINT_MAX; j++)
+        {
+            info.brake_state[i][j] = dat.brake_state[i][j];
+        }
+    }
+    info.emergency_stop = dat.emgstop_state != 0;
+    info.protection_stop = dat.protectstop_state != 0;
+    info.function_button = dat.function_btn_state != 0;
+    info.plus_button = dat.hand_open_btn_state != 0;
+    info.minus_button = dat.hand_close_btn_state != 0;
+    info.ip_reset_button = dat.ip_reset_btn_state != 0;
+    info.gripper_state = dat.gripper_state != 0;
+    info.driver_fatal_error = dat.fatal_error & 0b01;
+    info.driver_error = dat.error != 0;
+    info.safety_mcu_fatal_error = dat.fatal_error & 0b10;
+    info.safety_mcu_error = dat.safety_error != 0;
+    info.mini_io_input = dat.mini_in;
+    info.mini_io_output = dat.mini_out;
+    info.gripper_state = dat.gripper_state != 0;
+
+    return info;
 }
 
 /**
@@ -386,33 +386,33 @@ void Driver::writeHwAcyclicCommAll(int fd, uint16_t address, std::array<uint16_t
                                    std::array<uint16_t, JOINT_MAX + 1>& recv_values) throw(CobottaException,
                                                                                            std::runtime_error)
 {
-  int ret;
-  int myerrno;
-  static const int length = JOINT_MAX + 1;
-  IOCTL_DATA_CB_ACYCLIC_COMM dat{ 0 };
+    int ret;
+    int myerrno;
+    static const int length = JOINT_MAX + 1;
+    IOCTL_DATA_CB_ACYCLIC_COMM dat{ 0 };
 
-  dat.in_length = sizeof(SRV_CB_ACYCLIC_1_ALL_REQ);
-  for (int j = 0; j < length; j++)
-  {
-    dat.req_1_all.data[j].address = address;
-    dat.req_1_all.data[j].value = send_values[j];
-  }
-
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_CB_ACYCLIC_COMM, &dat);
-  myerrno = errno;
-  if (ret != 0)
-  {
-    if (myerrno == ECANCELED)
+    dat.in_length = sizeof(SRV_CB_ACYCLIC_1_ALL_REQ);
+    for (int j = 0; j < length; j++)
     {
-      throw CobottaException(dat.result_1_1.result);
+        dat.req_1_all.data[j].address = address;
+        dat.req_1_all.data[j].value = send_values[j];
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  for (int j = 0; j < length; j++)
-  {
-    recv_values[j] = dat.result_1_all.data[j].value;
-  }
+
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_CB_ACYCLIC_COMM, &dat);
+    myerrno = errno;
+    if (ret != 0)
+    {
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result_1_1.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
+    }
+    for (int j = 0; j < length; j++)
+    {
+        recv_values[j] = dat.result_1_all.data[j].value;
+    }
 }
 
 /**
@@ -425,128 +425,129 @@ void Driver::writeHwAcyclicCommAll(int fd, uint16_t address, std::array<uint16_t
 void Driver::writeHwAcyclicComm(int fd, long arm_no, long joint_no, uint16_t address, uint16_t send_value,
                                 uint16_t& recv_value) throw(CobottaException, std::invalid_argument, std::runtime_error)
 {
-  int ret;
-  int myerrno;
-  IOCTL_DATA_CB_ACYCLIC_COMM dat{ 0 };
+    int ret;
+    int myerrno;
+    IOCTL_DATA_CB_ACYCLIC_COMM dat{ 0 };
 
-  Driver::checkArmNo(arm_no);
-  Driver::checkJointNo(joint_no);
+    Driver::checkArmNo(arm_no);
+    Driver::checkJointNo(joint_no);
 
-  dat.in_length = sizeof(SRV_CB_ACYCLIC_1_1_REQ);
-  dat.req_1_1.arm_no = arm_no;
-  dat.req_1_1.joint_no = joint_no;
-  dat.req_1_1.data.address = address;
-  dat.req_1_1.data.value = send_value;
+    dat.in_length = sizeof(SRV_CB_ACYCLIC_1_1_REQ);
+    dat.req_1_1.arm_no = arm_no;
+    dat.req_1_1.joint_no = joint_no;
+    dat.req_1_1.data.address = address;
+    dat.req_1_1.data.value = send_value;
 
-  errno = 0;
-  ret = ioctl(fd, COBOTTA_IOCTL_CB_ACYCLIC_COMM, &dat);
-  myerrno = errno;
-  if (ret != 0)
-  {
-    if (myerrno == ECANCELED)
+    errno = 0;
+    ret = ioctl(fd, COBOTTA_IOCTL_CB_ACYCLIC_COMM, &dat);
+    myerrno = errno;
+    if (ret != 0)
     {
-      throw CobottaException(dat.result_1_1.result);
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.result_1_1.result);
+        }
+        throw std::runtime_error(std::strerror(myerrno));
     }
-    throw std::runtime_error(std::strerror(myerrno));
-  }
-  recv_value = dat.result_1_1.data.value;
+    recv_value = dat.result_1_1.data.value;
 }
 
 /**
  * [ASYNC] COBOTTA_IOCTL_SRV_UPDATE
+ * (2021/07/11 Murilo M. Marinho, fixing some things that didn't really make sense.)
  * @param fd file descriptor
  * @exception RuntimeError An other error
  */
 struct DriverCommandInfo Driver::writeHwUpdate(int fd, const SRV_COMM_SEND& send_data) throw(std::runtime_error)
 {
-  IOCTL_DATA_UPDATE dat{ 0 };
-  DriverCommandInfo info;
+    IOCTL_DATA_UPDATE dat;
+    dat.send = send_data;
 
-  dat.send = send_data;
+    errno = 0;
+    const int ret = ioctl(fd, COBOTTA_IOCTL_SRV_UPDATE, &dat);
+    const int myerrno = errno;
 
-  errno = 0;
-  int ret = ioctl(fd, COBOTTA_IOCTL_SRV_UPDATE, &dat);
-  int myerrno = errno;
-  if (ret)
-  {
-    if (myerrno == ECANCELED)
+    if (ret != 0)
     {
-      info.result = dat.recv.result;
-      info.queue_num = (dat.recv.buff_state & 0xffff);
-      info.stay_here = dat.recv.buff_state && 0x00010000;
+        if (myerrno == ECANCELED)
+            throw CobottaException(dat.recv.result);
+        else
+            throw std::runtime_error(std::strerror(myerrno));
     }
-    else
-      throw std::runtime_error(std::strerror(myerrno));
-  }
 
-  return info;
+    DriverCommandInfo info;
+    info.result = dat.recv.result;
+    info.queue_num = dat.recv.buff_state & 0xffff;
+    info.stay_here = dat.recv.buff_state & 0x00010000;
+
+    return info;
 }
 
 SRV_COMM_RECV Driver::readHwEncoder(int fd, long arm_no) throw(CobottaException, std::runtime_error,
                                                                std::invalid_argument)
 {
-  IOCTL_DATA_GETENC dat{ 0 };
-  dat.arm_no = arm_no;
-  Driver::checkArmNo(arm_no);
+    IOCTL_DATA_GETENC dat{ 0 };
+    dat.arm_no = arm_no;
+    Driver::checkArmNo(arm_no);
 
-  errno = 0;
-  int ret = ioctl(fd, COBOTTA_IOCTL_SRV_GETENC, &dat);
-  int myerrno = errno;
-  if (ret != 0)
-  {
-    if (myerrno == ECANCELED)
+    errno = 0;
+    int ret = ioctl(fd, COBOTTA_IOCTL_SRV_GETENC, &dat);
+    int myerrno = errno;
+    if (ret != 0)
     {
-      throw CobottaException(dat.recv.result);
+        if (myerrno == ECANCELED)
+        {
+            throw CobottaException(dat.recv.result);
+        }
+        else
+        {
+            throw std::runtime_error(std::strerror(myerrno));
+        }
     }
-    else
-    {
-      throw std::runtime_error(std::strerror(myerrno));
-    }
-  }
-  return dat.recv;
+    return dat.recv;
 }
 
 uint32_t Driver::getStateQueueSize(long arm_no) const throw(std::invalid_argument)
 {
-  Driver::checkArmNo(arm_no);
-  return queue_size_[arm_no];
+    Driver::checkArmNo(arm_no);
+    return queue_size_[arm_no];
 }
 
 void Driver::checkArmNo(long arm_no) throw(std::invalid_argument)
 {
-  if (arm_no < 0 || arm_no > ARM_MAX)
-  {
-    throw std::invalid_argument("Invalid arm_no: " + std::to_string(arm_no) + " is out of range(0 <= arm_no < " +
-                                std::to_string(ARM_MAX) + ").");
-  }
+    if (arm_no < 0 || arm_no > ARM_MAX)
+    {
+        throw std::invalid_argument("Invalid arm_no: " + std::to_string(arm_no) + " is out of range(0 <= arm_no < " +
+                                    std::to_string(ARM_MAX) + ").");
+    }
 }
 void Driver::checkJointNo(long joint_no) throw(std::invalid_argument)
 {
-  if (joint_no < 0 || joint_no > JOINT_MAX)
-  {
-    throw std::invalid_argument("Invalid joint_no: " + std::to_string(joint_no) + " is out of range(0 <= joint_no < " +
-                                std::to_string(JOINT_MAX) + ").");
-  }
+    if (joint_no < 0 || joint_no > JOINT_MAX)
+    {
+        throw std::invalid_argument("Invalid joint_no: " + std::to_string(joint_no) + " is out of range(0 <= joint_no < " +
+                                    std::to_string(JOINT_MAX) + ").");
+    }
 }
 
 DriverVersion Driver::getVersion() const
 {
-  return version_;
+    return version_;
 }
 
 bool Driver::isError() const
 {
-  return error_;
+    return error_;
 }
 
 bool Driver::isFatalError() const
 {
-  return fatal_error_;
+    return fatal_error_;
 }
 
 bool Driver::isIpResetButtonOn() const
 {
-  return ip_reset_button_;
+    return ip_reset_button_;
 }
 
 } /* namespace cobotta */
